@@ -1,0 +1,191 @@
+.AddUpdateTemplate{
+    box-sizing: border-box;
+    color: #323130;
+    font-size: 14px;
+    padding-bottom: 16px;
+
+    * {
+        box-sizing: border-box;
+    }
+
+    .columnsRow{
+        display: flex;
+        gap: 16px;
+        width: 100%;
+        margin-top: 4px;
+        margin-bottom: 16px;
+    }
+
+    .fieldsColumn{
+        box-sizing: border-box;
+        flex: 1 1 0;
+        min-width: 0;
+    }
+
+    .availableFieldsColumn{
+        flex: 0 0 58%;
+        max-width: 58%;
+    }
+
+    .templateFieldsColumn{
+        flex: 0 0 calc(42% - 16px);
+        max-width: calc(42% - 16px);
+    }
+
+    .detailsList{
+        border: 1px solid #edebe9;
+        background-color: #ffffff;
+        overflow-x: hidden;
+        padding: 5px;
+        height: 300px;
+    }
+
+    :global(.ms-DetailsRow-cell) {
+        align-items: center;
+        display: flex;
+        min-height: 40px;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    :global(.ms-DetailsRow-cell span) {
+        display: block;
+        line-height: 18px;
+        overflow: visible;
+        text-overflow: clip;
+        white-space: normal;
+        word-break: break-word;
+    }
+
+    :global(.ms-DetailsRow) {
+        min-height: 40px;
+    }
+    .editorContainer{
+        height: 210px;
+        margin-bottom: 16px;
+    }
+    .quillEditor{
+        height: 168px;
+        background-color: #ffffff;
+    }
+    .iconContainer{
+        display: table;
+    }
+    .moveColumn{
+        display: table-cell;
+        vertical-align: middle;
+    }
+    .removeIconContainer{
+        height: 10px;
+        margin-top: 4px;
+    }
+    .dropContainer{
+        min-height: 312px;
+        border: 2px dashed #c8c8c8;
+        background-color: #fafafa;
+        overflow: hidden;
+        transition: border-color 0.15s ease, background-color 0.15s ease;
+    }
+    .sectionEditorRow{
+        display: flex;
+        gap: 8px;
+        width: 100%;
+        margin-bottom: 16px;
+    }
+    .sectionInputColumn{
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+    .sectionActionsColumn{
+        flex: 0 0 auto;
+        white-space: nowrap;
+    }
+    .sectionRow{
+        background-color: rgb(202, 230, 241);
+    }
+    .toggleAdvanced{
+        text-align: right;
+    }
+
+    :global(.dragEnter) {
+        border-color: #0078d4 !important;
+        background-color: #eff6fc !important;
+    }
+
+    :global(.ql-toolbar.ql-snow) {
+        border: 1px solid #edebe9;
+        border-bottom: 0;
+        background-color: #f8f8f8;
+        line-height: normal;
+        min-height: 42px;
+        padding: 6px 8px;
+    }
+
+    :global(.ql-container.ql-snow) {
+        border: 1px solid #edebe9;
+        font-family: "Segoe UI", Arial, sans-serif;
+        font-size: 14px;
+        height: 126px;
+    }
+
+    :global(.ql-editor) {
+        min-height: 126px;
+        padding: 10px 12px;
+    }
+
+    :global(.ql-snow .ql-formats) {
+        margin-right: 8px;
+    }
+
+    :global(.ql-snow .ql-picker) {
+        color: #323130;
+        font-size: 13px;
+    }
+
+    :global(.ql-snow .ql-picker:not(.ql-color-picker):not(.ql-icon-picker) svg),
+    :global(.ql-snow button svg) {
+        display: block;
+        height: 18px;
+        max-height: 18px;
+        max-width: 18px;
+        width: 18px;
+    }
+
+    :global(.ql-snow .ql-picker:not(.ql-color-picker):not(.ql-icon-picker) svg) {
+        margin-top: -9px;
+        position: absolute;
+        right: 0;
+        top: 50%;
+    }
+
+    :global(.ql-snow .ql-stroke) {
+        stroke: #605e5c;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
+    }
+
+    :global(.ql-snow .ql-fill),
+    :global(.ql-snow .ql-stroke.ql-fill) {
+        fill: #605e5c;
+    }
+
+    :global(.ql-snow button) {
+        height: 24px;
+        padding: 3px 5px;
+        width: 28px;
+    }
+
+    :global(.ql-snow .ql-picker-label) {
+        border: 1px solid transparent;
+        height: 24px;
+        padding-left: 6px;
+        padding-right: 18px;
+    }
+
+    :global(.ql-snow .ql-picker-options) {
+        border: 1px solid #edebe9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+        z-index: 10;
+    }
+}

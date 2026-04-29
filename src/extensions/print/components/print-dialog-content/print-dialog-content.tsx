@@ -1,0 +1,369 @@
+import * as React from 'react';
+import { initializeIcons } from '@uifabric/icons';
+import ReactToPrint from "react-to-print";
+import styles from './print-dialog.module.scss';
+import {
+    DialogContent, IDropdownOption
+} from 'office-ui-fabric-react';
+import { Spinner, SpinnerSize } from 'office-ui-fabric-react/lib/Spinner';
+import IPrintDialogContentProps from './print-dialog-content-props';
+import IPrintDialogContentState from './print-dialog-content-state';
+import PrintTemplateContent from '../print-dialog-template-content/print-template-content';
+import SettingsPanel from '../settings-panel/settings-panel';
+import {
+    Dropdown
+} from 'office-ui-fabric-react';
+import { IconButton } from 'office-ui-fabric-react/lib/Button';
+import ListService from '../../services/list-service';
+import { isArray } from '@pnp/common';
+import ITemplateItem from '../../models/template-item';
+import { mergeStyles } from 'office-ui-fabric-react/lib/Styling';
+import printStyles from '../print-dialog-template-content/print-template-content.module.scss';
+import { sp, EmailProperties } from '@pnp/sp';
+import reactElementToJSXString from 'react-element-to-jsx-string';
+
+const _items: any[] = [];
+export default class PrintDialogContent extends React.Component<IPrintDialogContentProps, IPrintDialogContentState> {
+    private componentRef: React.ReactInstance;
+    private listService: ListService;
+    constructor(props: IPrintDialogContentProps | Readonly<IPrintDialogContentProps>) {
+        super(props);
+
+        if (_items.length === 0) {
+            for (let i = 0; i < 10; i++) {
+                _items.push({
+                    key: i,
+                    name: 'Item ' + i,
+                    value: i
+                });
+            }
+        }
+
+        this.state = {
+            hideLoading: true,
+            loadingMessage: "Loading...",
+            templates: [],
+            items: _items,
+            showPanel: false,
+            hideTemplateLoading: false,
+            printTemplate: null,
+            selectedTemplateIndex: -1,
+            itemContent: {},
+            isSiteAdmin: false
+        };
+        this.listService = new ListService();
+        // Initialize icons
+        initializeIcons();
+    }
+
+    public async componentDidMount() {
+        try {
+            // Show spinner
+            this.setState({ hideLoading: true });
+    
+            // Fetch templates and item content in parallel
+            await Promise.all([this.getTemplates(), this.getItemContent()]);
+    
+            // Hide spinner once data is fetched
+            this.setState({ hideLoading: false }, () => console.log("hideLoading set to:", this.state.hideLoading));
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            // Ensure spinner hides even if there's an error
+            this.setState({ hideLoading: false }, () => console.log("hideLoading set to:", this.state.hideLoading));
+        }
+    }
+
+    public render(): JSX.Element {
+        const templates = this.state.templates;
+        const options = templates.length>0 ? templates.map(t => ({ key: t.Id, text: t.Title })) : [];
+        const dialogTitle = this.props.title ? `Print ${this.props.title}` : 'Print';
+        return <div className={styles.PrintDialogContent}>
+            <DialogContent
+                title={dialogTitle}
+                onDismiss={this.props.close}
+                showCloseButton={true}
+            >
+
+                {this.state.hideLoading && 
+                    <div className={styles.dialogRow}>
+                        <Spinner size={SpinnerSize.large} label={this.state.loadingMessage} ariaLive="assertive" />
+                    </div>
+                }
+
+                <div className={styles.dialogGrid} dir="ltr" hidden={this.state.hideLoading}>
+                    <div className={styles.dialogRow}>
+                        <div className={styles.dropdownColumn}>
+                            <Dropdown
+                                placeHolder="Select your template..."
+                                options={options}
+                                onChanged={this._onDropDownChanged}
+                            />
+                        </div>
+                        <div className={`${styles.printIcons} ${styles.actionsColumn}`}>
+                            <ReactToPrint
+                                trigger={() => <IconButton iconProps={{ iconName: 'Print' }} title="Print" ariaLabel="Print" />}
+                                content={() => this.componentRef}
+                            />
+                            <span hidden={false}>
+                                <IconButton iconProps={{ iconName: 'Mail' }} title="Mail" ariaLabel="Mail" onClick={this._sendAsEmail} />
+                            </span>
+                            <span hidden={!this.state.isSiteAdmin}><IconButton iconProps={{ iconName: 'Settings' }} title="Settings" ariaLabel="Settings" onClick={this._setShowPanel(true)} /></span>
+                        </div>
+                    </div>
+                    {this.state.hideTemplateLoading &&
+                        <div className={`${styles.loadingMargin} ${styles.dialogRow}`}>
+                            <Spinner size={SpinnerSize.large} label={this.state.loadingMessage} ariaLive="assertive" />
+                        </div>
+                    }
+
+                    {this.state.printTemplate &&
+                        <div className={`${styles.templateContent} ${styles.dialogRow}`}>
+                            <PrintTemplateContent itemId={this.props.itemId} template={this.state.printTemplate} ref={el => (this.componentRef = el)} />
+                        </div>
+                    }
+                </div>
+                <SettingsPanel onTemplateAdded={this._onTemplateAdded}
+                    onTemplateRemoved={this._onTemplateRemoved}
+                    onTemplateUpdated={this._onTemplateUpdated}
+                    templates={isArray(templates) ? templates : []} showPanel={this.state.showPanel} setShowPanel={this._setShowPanel} listId={this.props.listId} />
+            </DialogContent>
+        </div>;
+    }
+
+    /**
+     * This function will be implemented for the next version
+     */
+    private _sendAsEmail = () => {
+
+        if (this.state.printTemplate) {
+            const Body = reactElementToJSXString(this._makeEmailBody());
+            console.log("hello");
+            console.log(Body);
+            const email: EmailProperties = {
+                To: ["ramin@raminahmadi.onmicrosoft.com"],
+                Body,
+                Subject: "Test"
+            };
+            sp.utility.sendEmail(email).then();
+        }
+
+    }
+
+    /**
+     * This function will be implemented for the next version
+     */
+    private _makeEmailBody = (): any => {
+        return <div className={printStyles.Print}>
+            {this.state.printTemplate &&
+                <div className={printStyles.Print}>
+                    <div className={printStyles.printHeader} dangerouslySetInnerHTML={{ __html: this.state.printTemplate.header || '' }} />
+                    <div className={printStyles.printContent}>
+                        {
+                            this.state.printTemplate.content
+                        }
+                    </div>
+                    <div className={printStyles.printFooter} dangerouslySetInnerHTML={{ __html: this.state.printTemplate.footer || '' }} />
+
+                </div>
+            }
+        </div>;
+    }
+
+    /**
+     * This function will concat the added templated to the templates list
+     */
+    private _onTemplateAdded = (template: ITemplateItem) => {
+        this.setState(prevState => (
+            {
+                templates: prevState.templates.concat(template)
+            }
+        ));
+    }
+
+    /**
+     * This function loads the selected template and display it
+     */
+    private _onDropDownChanged = (option: IDropdownOption, index?: number) => {
+        const template = this.state.templates[index];
+        this.loadTemplate(template);
+        this.setState({
+            selectedTemplateIndex: index
+        });
+    }
+
+    /**
+     * This function updates the templates list when a template updated
+     */
+    private _onTemplateUpdated = (index: number, template: ITemplateItem) => {
+        const newTemplatesList = [...this.state.templates];
+        newTemplatesList[index] = { ...template };
+        this.setState({
+            templates: newTemplatesList
+        });
+
+        // if user already select the updated template, update the UI with the latest changes
+        if (this.state.selectedTemplateIndex === index)
+            this.loadTemplate(template);
+
+    }
+
+    /**
+     * This function loads the template and render it
+     */
+    private loadTemplate = (template: any) => {
+
+        // Display loading indicator
+        this.setState({
+            hideTemplateLoading: true
+        });
+
+        if (!template || !template.Columns) {
+            console.error("Template or Columns property is undefined:", template);
+            this.setState({ hideTemplateLoading: true }, () => console.log("hideTemplateLoading set to since there was an error:", this.state.hideTemplateLoading));
+            return;
+        }
+        // Get the columns to be displayed, if user updated the template recently, doesn't need to be parse it as an array
+        const columns: any[] = isArray(template.Columns) ? template.Columns : JSON.parse(template.Columns);
+
+        // For storing non-section fields
+        let table: any[] = [];
+
+        // The final print elements
+        const content: any[] = [];
+
+        if (columns.length > 0) {
+            for (let i = 0; i < columns.length; i++) {
+                const item = columns[i];
+                if (item.Type === "Section") {
+                    // If it's a section, first check if there is any field before this section and add it to the content
+                    if (table.length > 0) {
+                        content.push(
+                            // Make the table of content
+                            this._makeFieldsTable(table)
+                        );
+                    }
+                    // Adding the section to the content with customized background and font color
+                    const { BackgroundColor, FontColor } = item;
+                    const sectionStyles = { backgroundColor: BackgroundColor, color: FontColor };
+                    const className = mergeStyles(sectionStyles);
+                    content.push(<div className={`${styles.templateSection} ${className}`} style={sectionStyles}><span>{item.Title}</span></div>);
+
+                    // Reset the table array for upcoming fields
+                    table = [];
+                }
+
+                // If it's a field add it to the table
+                if (item.Type === "Field") {
+                    // If it has no value and Skip Blank Columns enables for this template, skip the field
+                    if (template.SkipBlankColumns) {
+                        if (this.state.itemContent[item.InternalName].length > 0)
+                            table.push({
+                                Name: item.Title,
+                                Value: this.state.itemContent[item.InternalName]
+                            });
+                    }
+                    else {
+                        // Add it to the table even if it has no value (only if Skip Blank Columns not enabled)
+                        table.push({
+                            Name: item.Title,
+                            Value: this.state.itemContent[item.InternalName]
+                        });
+                    }
+
+                }
+                // If it goes through all of the fields and the sections and the table is not empty, just add the remaining fields at the end of the content elements
+                if (i + 1 === columns.length && table.length > 0) {
+                    content.push(this._makeFieldsTable(table));
+                }
+            }
+        }
+
+        // Hide loading indicator, set the print template to be ready for print
+        this.setState({
+            printTemplate: {
+                header: template.Header,
+                footer: template.Footer,
+                content
+            },
+            hideTemplateLoading: false
+        }, () => console.log("hideTemplateLoading set to after setState:", this.state.hideTemplateLoading));
+    }
+
+    /**
+     * Make table of fields including Field Name and Field Value
+     */
+    private _makeFieldsTable = (table: any): JSX.Element => {
+        return <table className={styles.templateTable}>
+            {
+                table.map((el: { Name: boolean | React.ReactChild | React.ReactFragment | React.ReactPortal; Value: boolean | React.ReactChild | React.ReactFragment | React.ReactPortal; }) => <tr>
+                    <td className={styles.nameColumn}>
+                        {el.Name}
+                    </td>
+                    <td className={styles.valueColumn}>
+                        {el.Value}
+                    </td>
+                </tr>)
+            }
+        </table>;
+    }
+
+    /**
+     * Remove the template from the templates list
+     */
+    private _onTemplateRemoved = async (id: number, template: ITemplateItem) => {
+        const removedItem = await this.listService.removeTempate(id);
+        if (removedItem)
+            this.setState(prevState => ({
+                templates: prevState.templates.filter(el => el != template)
+            }));
+    }
+
+    // Open or Close the Settings panel
+    public _setShowPanel = (showPanel: boolean): (() => void) => {
+        return (): void => {
+            this.setState({ showPanel });
+        };
+    }
+
+    
+
+    // Check if Print Settings list exists, otherwise create it
+    /*
+    private initializeSettings = async () => {
+        const listHelper = new ListHelper(this.props.webUrl);
+
+        listHelper.ValidatePrintSettingsList().then(_ => {
+            this.setState({
+                hideLoading: true
+            });
+        }).catch(e => {
+            // Print Settings list already exists
+            this.getTemplates();
+        });
+    }
+    */
+    // Get all available templates for this list
+    private getTemplates = async () => {
+        this.setState({ hideLoading: false });
+        try {
+            const { listId } = this.props;
+            const templates = await this.listService.GetTemplatesByListId(listId);
+            this.setState({ templates });
+        } catch (error) {
+            console.error('Error fetching item content:', error);
+        } finally {
+            this.setState({ hideLoading: true });
+        }
+    }
+
+    // Gets all fields name and value for selected item, also checks if current user is able to open settings panel
+    private getItemContent = async () => {
+        const { listId, itemId } = this.props;
+        const itemContent = await this.listService.GetItemById(listId, itemId);
+        const isSiteAdmin = await this.listService.IsCurrentUserSiteAdmin();
+        this.setState({
+            itemContent,
+            isSiteAdmin
+        });
+    }
+}

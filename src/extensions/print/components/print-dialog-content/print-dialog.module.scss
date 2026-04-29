@@ -1,0 +1,126 @@
+.PrintDialogContent { 
+    padding: 1px;
+    width: 800px;
+
+    .clear {
+        clear: both;
+    }
+
+    .printIcons{
+        text-align: right;
+    }
+
+    .dialogGrid {
+        width: 100%;
+        max-height: calc(100vh - 150px);
+        overflow: hidden;
+    }
+
+    .dialogRow {
+        display: flex;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .dropdownColumn {
+        box-sizing: border-box;
+        flex: 0 0 66.6667%;
+        max-width: 66.6667%;
+    }
+
+    .actionsColumn {
+        box-sizing: border-box;
+        flex: 0 0 33.3333%;
+        max-width: 33.3333%;
+    }
+
+    .templateContent{
+        margin-top: 10px;
+        border: 1px solid #eeeeee;
+        display: block;
+        max-height: calc(100vh - 260px);
+        overflow-x: auto;
+        overflow-y: auto;
+        width: 100%;
+    }
+    .loadingMargin{
+        margin-top: 10px;
+    }
+    .templateSection{
+        width: 100%;
+        margin: 5px;
+        height: 35px;
+    }
+    .templateSection span{        
+        padding: 8px;
+        display: block;
+    }
+    .templateTable {
+        margin: 5px;
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    .templateTable td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+    
+    .templateTable tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+
+    .nameColumn{
+        width:30%;
+        vertical-align: top;
+    }
+
+    .valueColumn{
+        width:70%;
+    }
+}
+@media print{
+    .templateContent{
+        display: flex;
+        flex-direction: column;
+        max-height: none;
+        min-height: 100vh;
+        overflow: visible;
+    }
+    .templateSection{
+        width: 100%;
+        margin: 5px;
+        height: 35px;
+    }
+    .templateSection span{        
+        padding: 8px;
+        display: block;
+    }
+    .templateTable {
+        margin: 5px;
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+    }
+    
+    .templateTable td, th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+    
+    .templateTable tr:nth-child(even) {
+        background-color: #dddddd;
+    }
+
+    .nameColumn{
+        width:30%;
+        vertical-align: top;
+    }
+
+    .valueColumn{
+        width:70%;
+    }
+}
