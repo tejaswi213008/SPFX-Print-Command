@@ -9,6 +9,8 @@ export default interface IPrintDialogContentState {
     hideTemplateLoading:boolean;
     printTemplate: IPrintTemplate;
     itemContent:any;
+    /** HTML values of rich text (multi line) fields, keyed by the same encoded internal name used in itemContent */
+    richTextContent:{ [fieldName: string]: string };
     selectedTemplateIndex:number;
     isSiteAdmin:boolean;
 }

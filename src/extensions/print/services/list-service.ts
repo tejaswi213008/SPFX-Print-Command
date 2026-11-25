@@ -40,6 +40,48 @@ export default class ListService {
             });
     }
     /**
+     * Gets the HTML of every rich text (multi line of text) field of the item.
+     * fieldValuesAsText removes all formatting (bold, italic, lists, colors...), so the raw
+     * HTML is read separately for those fields.
+     * The result is keyed by the same encoded internal name that fieldValuesAsText and the templates use.
+     */
+    public async GetRichTextValues(listId: string, itemId: number): Promise<{ [fieldName: string]: string }> {
+        const result: { [fieldName: string]: string } = {};
+        try {
+            const list = sp.web.lists.getById(listId);
+            const noteFields: any[] = await list.fields
+                .filter("TypeAsString eq 'Note'")
+                .select('InternalName', 'RichText', 'AppendOnly')
+                .get();
+
+            const richFields = noteFields.filter(f => f.RichText && !f.AppendOnly);
+            if (richFields.length === 0) {
+                return result;
+            }
+
+            // In REST, item properties for fields starting with "_" are prefixed with "OData_"
+            const restName = (internalName: string) => internalName.indexOf('_') === 0 ? `OData_${internalName}` : internalName;
+
+            const item: any = await list.items.getById(itemId)
+                .select(...richFields.map(f => restName(f.InternalName)))
+                .get();
+
+            for (const field of richFields) {
+                const html = item[restName(field.InternalName)];
+                if (typeof html === 'string' && html.trim().length > 0) {
+                    // Same key encoding as GetFieldsbyListId / fieldValuesAsText
+                    const key = field.InternalName.replace(/_/g, '_x005f_').replace(' ', '');
+                    result[key] = html;
+                }
+            }
+        } catch (error) {
+            Log.error(LOG_SOURCE, error);
+            this.safeLog(error);
+        }
+        return result;
+    }
+
+    /**
      * GetTemplatesByListId
      */
     public async GetTemplatesByListId(listId: string): Promise<any[]> {

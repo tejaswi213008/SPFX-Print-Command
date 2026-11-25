@@ -49,6 +49,7 @@ export default class PrintDialogContent extends React.Component<IPrintDialogCont
             printTemplate: null,
             selectedTemplateIndex: -1,
             itemContent: {},
+            richTextContent: {},
             isSiteAdmin: false
         };
         this.listService = new ListService();
@@ -254,22 +255,14 @@ export default class PrintDialogContent extends React.Component<IPrintDialogCont
 
                 // If it's a field add it to the table
                 if (item.Type === "Field") {
+                    const textValue: string = this.state.itemContent[item.InternalName] || '';
                     // If it has no value and Skip Blank Columns enables for this template, skip the field
-                    if (template.SkipBlankColumns) {
-                        if (this.state.itemContent[item.InternalName].length > 0)
-                            table.push({
-                                Name: item.Title,
-                                Value: this.state.itemContent[item.InternalName]
-                            });
-                    }
-                    else {
-                        // Add it to the table even if it has no value (only if Skip Blank Columns not enabled)
+                    if (!template.SkipBlankColumns || textValue.length > 0) {
                         table.push({
                             Name: item.Title,
-                            Value: this.state.itemContent[item.InternalName]
+                            Value: this._getFieldValueElement(item.InternalName, textValue)
                         });
                     }
-
                 }
                 // If it goes through all of the fields and the sections and the table is not empty, just add the remaining fields at the end of the content elements
                 if (i + 1 === columns.length && table.length > 0) {
@@ -287,6 +280,43 @@ export default class PrintDialogContent extends React.Component<IPrintDialogCont
             },
             hideTemplateLoading: false
         }, () => console.log("hideTemplateLoading set to after setState:", this.state.hideTemplateLoading));
+    }
+
+    /**
+     * Returns the value to display for a field: rich text fields keep their HTML formatting
+     * (bold, italic, underline, lists, colors, tables...), all other fields are displayed as plain text
+     */
+    private _getFieldValueElement = (internalName: string, textValue: string): React.ReactNode => {
+        const html = this.state.richTextContent[internalName];
+        if (html) {
+            return <div className={styles.richText} dangerouslySetInnerHTML={{ __html: this._sanitizeHtml(html) }} />;
+        }
+        return textValue;
+    }
+
+    /**
+     * Removes scripts, event handlers and other active content from the HTML of a rich text field
+     */
+    private _sanitizeHtml = (html: string): string => {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const blocked = doc.body.querySelectorAll('script, style, iframe, object, embed, link, meta, form, input, button, textarea, select');
+        for (let i = 0; i < blocked.length; i++) {
+            blocked[i].parentNode.removeChild(blocked[i]);
+        }
+        const all = doc.body.querySelectorAll('*');
+        for (let i = 0; i < all.length; i++) {
+            const el = all[i];
+            for (let j = el.attributes.length - 1; j >= 0; j--) {
+                const attr = el.attributes[j];
+                const name = attr.name.toLowerCase();
+                const value = (attr.value || '').replace(/\s/g, '').toLowerCase();
+                if (name.indexOf('on') === 0 ||
+                    ((name === 'href' || name === 'src' || name === 'xlink:href') && /^(java|vb)script:|^data:text\/html/.test(value))) {
+                    el.removeAttribute(attr.name);
+                }
+            }
+        }
+        return doc.body.innerHTML;
     }
 
     /**
@@ -359,10 +389,14 @@ export default class PrintDialogContent extends React.Component<IPrintDialogCont
     // Gets all fields name and value for selected item, also checks if current user is able to open settings panel
     private getItemContent = async () => {
         const { listId, itemId } = this.props;
-        const itemContent = await this.listService.GetItemById(listId, itemId);
-        const isSiteAdmin = await this.listService.IsCurrentUserSiteAdmin();
+        const [itemContent, richTextContent, isSiteAdmin] = await Promise.all([
+            this.listService.GetItemById(listId, itemId),
+            this.listService.GetRichTextValues(listId, itemId),
+            this.listService.IsCurrentUserSiteAdmin()
+        ]);
         this.setState({
-            itemContent,
+            itemContent: itemContent || {},
+            richTextContent: richTextContent || {},
             isSiteAdmin
         });
     }
